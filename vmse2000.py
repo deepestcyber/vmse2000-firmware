@@ -179,7 +179,7 @@ class Vmse(object):
         while self.running:
             (r, w, e) = select.select(self.socket_list, [], [], 0.1)
             for s in r:
-                data, addr = r.recvfrom(1024)
+                data, addr = s.recvfrom(1024)
                 # TODO: fix this, this needs buffering
                 print("%s sent: '%s'" % (addr, data))
                 for word in data.split(" "):
@@ -298,7 +298,7 @@ class Vmse(object):
                     print("Tautologic, my dear Watson!")
                     self.do_fine()
                 else:
-                    print("got word: '%s'", item)
+                    print("got word: '%s'" % item)
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)

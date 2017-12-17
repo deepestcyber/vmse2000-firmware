@@ -1,6 +1,7 @@
 import socket
 
 UDP_IP = "192.168.178.21"
+UDP_IP = "localhost"
 UDP_PORT = 1800
 MESSAGE = "Hello, World!"
 
