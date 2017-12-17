@@ -17,6 +17,7 @@ class Vmse(object):
     CONFIG_PATH = "vmse2000.ini"
     #
     running = False
+    fining = False
     # audio config
     audio_device_name = None
     audio_device = None
@@ -182,21 +183,14 @@ class Vmse(object):
 
     def button_thread_foo(self):
         print("B: button thread started")
-        down = False
         while self.running:
             pressed = not self.GPIO.input(self.pin_button)
-            if down:
-                if not pressed:
-                    down = False
-                else:
-                    time.sleep(0.01)
+            if pressed:
+                self.socket_word_queue.put(True)
+                # unprelling:
+                time.sleep(0.3)
             else:
-                if pressed:
-                    self.socket_word_queue.put(True)
-                    # unprelling:
-                    time.sleep(0.1)
-                else:
-                    time.sleep(0.01)
+                time.sleep(0.01)
 
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
@@ -235,6 +229,7 @@ class Vmse(object):
 
     def do_fine(self):
         # led on:
+        self.fining = True
         if self.pin_fine:
             print("Turning on fine pin %d" % self.pin_fine)
             self.GPIO.output(self.pin_fine, self.GPIO.HIGH)
@@ -256,6 +251,7 @@ class Vmse(object):
         if self.pin_fine:
             print("Turning off fine pin %d" % self.pin_fine)
             self.GPIO.output(self.pin_fine, self.GPIO.LOW)
+        self.fining = False
 
     def power_on(self):
         if self.pin_running:
