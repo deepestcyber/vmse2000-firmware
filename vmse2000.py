@@ -113,7 +113,7 @@ class Vmse(object):
         for data in self.fine_data:
             self.audio_device.write(data)
 
-    def printing_thread_foo(self):
+    def printer_thread_foo(self):
         print("P: printer thread started")
         while self.running:
             entry = self.printer_start_queue.get()
