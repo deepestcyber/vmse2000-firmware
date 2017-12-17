@@ -16,6 +16,7 @@ class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
     CONFIG_PATH = "vmse2000.ini"
     #
+    GPIO = None
     running = False
     fining = False
     # audio config
@@ -282,7 +283,11 @@ class Vmse(object):
             self.power_on()
 
             while self.running:
-                item = self.socket_word_queue.get()
+                try:
+                    item = self.socket_word_queue.get(True, 0.1)
+                except Queue.Empty:
+                    # that's okay, dude! we'll just try again...
+                    continue
                 if item is True:
                     # this one came from button:
                     print("Tautologic, my dear Watson!")
