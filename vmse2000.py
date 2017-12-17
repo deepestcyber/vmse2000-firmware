@@ -182,11 +182,21 @@ class Vmse(object):
 
     def button_thread_foo(self):
         print("B: button thread started")
+        down = False
         while self.running:
-            if not self.GPIO.input(self.pin_button):
-                self.socket_word_queue.put(True)
+            pressed = not self.GPIO.input(self.pin_button)
+            if down:
+                if not pressed:
+                    down = False
+                else:
+                    time.sleep(0.01)
             else:
-                time.sleep(0.01)
+                if pressed:
+                    self.socket_word_queue.put(True)
+                    # unprelling:
+                    time.sleep(0.1)
+                else:
+                    time.sleep(0.01)
 
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
