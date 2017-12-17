@@ -130,12 +130,13 @@ class Vmse(object):
         print("P: printing thread exiting")
 
     def print_ticket(self):
-        self.printer.set(align='center')
         if self.printer_flipped:
+            self.printer.set(align='center', flip=True)
             for line in reversed(self.printer_text):
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
         else:
+            self.printer.set(align='center')
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
                 self.printer.text(line)
