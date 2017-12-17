@@ -214,8 +214,17 @@ class Vmse(object):
         try:
             self.start_threads()
             self.power_on()
-            # self.do_fine()
-            time.sleep(10)
+
+            if self.pin_button:
+                while True:
+                    if not self.GPIO.input(self.pin_button):
+                        self.do_fine()
+                    else:
+                        time.sleep(0.05)
+            else:
+                print("Wait - no trigger!")
+                time.sleep(10)
+
             self.power_off()
         finally:
             self.stop_threads()
