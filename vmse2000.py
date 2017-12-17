@@ -119,7 +119,7 @@ class Vmse(object):
             entry = self.printer_start_queue.get()
             if entry:
                 print("P: start printing")
-                # TODO:
+                self.print_ticket()
                 print("P: done printing")
                 self.printer_finish_queue.put(True)
             else:
@@ -185,7 +185,7 @@ class Vmse(object):
         if self.audio_thread:
             self.audio_finish_queue.get()
         if self.printer_thread:
-            self.printer_thread.get()
+            self.printer_finish_queue.get()
 
         # led off:
         if self.pin_fine:
