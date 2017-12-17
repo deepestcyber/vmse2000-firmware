@@ -21,7 +21,8 @@ def load_words(filename):
     return set(lines)
 
 def do_fine():
-    os.system("aplay " + FINE)
+    # os.system("aplay " + FINE)
+    device.setperiodsize(320)
 
 def work_word(words, word):
     if word in words:
