@@ -156,7 +156,7 @@ class Vmse(object):
                 GPIO.setup(self.pin_fine, GPIO.OUT)
             if self.pin_button:
                 print("button pin on %d (pulluped)" % self.pin_button)
-                GPIO.setup(self.pin_button, GPIO.IN, pull_up_down=GPIO.PUD)
+                GPIO.setup(self.pin_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         else:
             print("skipping gpio initialisation")
 
