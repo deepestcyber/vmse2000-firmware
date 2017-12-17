@@ -60,6 +60,8 @@ class Vmse(object):
         self.printer_dev = config.get("printer", "device")
         self.printer_rate = config.getint("printer", "baudrate")
         self.printer_logo_path = config.get("printer", "logo")
+        self.printer_flipped = config.getboolean("printer", "flipped")
+        self.printer_text = config.get("printer", "text").split("|")
 
     def _init_audio(self):
         print("initialsing audio output")
@@ -129,16 +131,14 @@ class Vmse(object):
 
     def print_ticket(self):
         self.printer.set(align='center')
-        self.printer.image(self.printer_logo_path)
-        self.printer.text("VMSE 2000")
-
-        self.printer.set(align='left')
-        self.printer.text('\n')
-        self.printer.text('You are fined 0.00012700 BTC\n')
-        self.printer.text('for a violation of the\n')
-        self.printer.text('Verbal Morality Statute')
-
-        self.printer.text('\n')
+        if self.printer_flipped:
+            for line in reversed(self.printer_text):
+                self.printer.text(line + "\n")
+            self.printer.image(self.printer_logo_path)
+        else:
+            self.printer.image(self.printer_logo_path)
+            for line in self.printer_text:
+                self.printer.text(line)
         self.printer.cut()
 
 
