@@ -223,7 +223,7 @@ class Vmse(object):
                     if not self.GPIO.input(self.pin_button):
                         self.do_fine()
                     else:
-                        time.sleep(0.05)
+                        time.sleep(0.01)
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)
