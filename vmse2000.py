@@ -8,6 +8,9 @@ import alsaaudio
 import wave
 import ConfigParser
 import Queue
+import socket
+import select
+
 
 class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
@@ -28,14 +31,21 @@ class Vmse(object):
     printer_dev = None
     printer_rate = 38400
     printer_logo_path = None
+    # socket config
+    udp_host = None
+    udp_port = None
+    socket_list = []
     # threads:
     audio_thread = None
     printer_thread = None
+    socket_thread = None
+    button_thread = None
     # queues
     audio_start_queue = Queue.Queue()
     audio_finish_queue = Queue.Queue()
     printer_start_queue = Queue.Queue()
     printer_finish_queue = Queue.Queue()
+    socket_word_queue = Queue.Queue()
 
     def __init__(self):
         self.read_config()
@@ -62,6 +72,9 @@ class Vmse(object):
         self.printer_logo_path = config.get("printer", "logo")
         self.printer_flipped = config.getboolean("printer", "flipped")
         self.printer_text = config.get("printer", "text").split("|")
+        # socket
+        self.udp_port = config.get("socket", "udp_port")
+        self.udp_host = config.get("socket", "udp_host")
 
     def _init_audio(self):
         print("initialsing audio output")
@@ -88,6 +101,14 @@ class Vmse(object):
             print("starting printer thread")
             self.printer_thread = threading.Thread(target=self.printer_thread_foo)
             self.printer_thread.start()
+        if self.socket_list:
+            print("starting socket listener thread")
+            self.socket_thread = threading.Thread(target=self.socket_thread_foo)
+            self.socket_thread.start()
+        if self.pin_button:
+            print("starting button monitoring thread")
+            self.button_thread = threading.Thread(target=self.button_thread_foo)
+            self.button_thread.start()
 
     def stop_threads(self):
         if self.audio_thread:
@@ -96,6 +117,10 @@ class Vmse(object):
         if self.printer_thread:
             self.printer_start_queue.put(False)
             self.printer_thread.join()
+        if self.socket_thread:
+            self.socket_thread.join()
+        if self.button_thread:
+            self.button_thread.join()
 
     def audio_thread_foo(self):
         print("A: audio thread started")
@@ -142,6 +167,26 @@ class Vmse(object):
                 self.printer.text(line)
         self.printer.cut()
 
+    def socket_thread_foo(self):
+        print("S: socket thread started")
+        while self.running:
+            (r, w, e) = select.select(self.socket_list, [], [], 0.1)
+            for s in r:
+                data, addr = r.recvfrom(1024)
+                # TODO: fix this, this needs buffering
+                print("%s sent: '%s'" % (addr, data))
+                for word in data.split(" "):
+                    if word:
+                        self.socket_word_queue.put(word)
+        print("S: socket thread exiting")
+
+    def button_thread_foo(self):
+        print("B: button thread started")
+        while self.running:
+            if not self.GPIO.input(self.pin_button):
+                self.socket_word_queue.put(True)
+            else:
+                time.sleep(0.01)
 
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
@@ -168,6 +213,15 @@ class Vmse(object):
             self.printer = escpos.printer.Serial(self.printer_dev, baudrate=self.printer_rate)
         else:
             print("no printer")
+
+    def _init_socket(self):
+        if self.udp_port and self.udp_host:
+            print("listening on UDP %s:%d" % (self.udp_host, self.udp_port))
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.udp_socket.bind(("localhost", self.udp_port))
+            self.socket_list.append(self.udp_socket)
+        else:
+            print("No UDP socket")
 
     def do_fine(self):
         # led on:
@@ -218,12 +272,14 @@ class Vmse(object):
             self.start_threads()
             self.power_on()
 
-            if self.pin_button:
-                while True:
-                    if not self.GPIO.input(self.pin_button):
-                        self.do_fine()
-                    else:
-                        time.sleep(0.01)
+            while self.running:
+                item = self.socket_word_queue.get()
+                if item is True:
+                    # this one came from button:
+                    print("Tautologic, my dear Watson!")
+                    self.do_fine()
+                else:
+                    print("got word: '%s'", item)
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)
