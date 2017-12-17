@@ -54,6 +54,7 @@ class Vmse(object):
         self._init_audio()
         self._init_gpio()
         self._init_printer()
+        self._init_socket()
 
     def read_config(self):
         config = ConfigParser.SafeConfigParser()
@@ -75,7 +76,7 @@ class Vmse(object):
         self.printer_flipped = config.getboolean("printer", "flipped")
         self.printer_text = config.get("printer", "text").split("|")
         # socket
-        self.udp_port = config.get("socket", "udp_port")
+        self.udp_port = config.getint("socket", "udp_port")
         self.udp_host = config.get("socket", "udp_host")
 
     def _init_audio(self):
@@ -114,14 +115,18 @@ class Vmse(object):
 
     def stop_threads(self):
         if self.audio_thread:
+            print("joining audio thread")
             self.audio_start_queue.put(False)
             self.audio_thread.join()
         if self.printer_thread:
+            print("printer thread")
             self.printer_start_queue.put(False)
             self.printer_thread.join()
         if self.socket_thread:
+            print("joining socket thread")
             self.socket_thread.join()
         if self.button_thread:
+            print("joining button thread")
             self.button_thread.join()
 
     def audio_thread_foo(self):
@@ -300,6 +305,7 @@ class Vmse(object):
 
             self.power_off()
         finally:
+            self.running = False
             self.stop_threads()
             self.clean_up()
 
