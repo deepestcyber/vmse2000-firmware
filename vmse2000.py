@@ -206,6 +206,8 @@ class Vmse(object):
             self.GPIO.output(self.pin_running, self.GPIO.LOW)
         if self.pin_fine:
             self.GPIO.output(self.pin_fine, self.GPIO.LOW)
+        if self.GPIO:
+            self.GPIO.cleanup()
 
     def run(self):
         print("\n === VMSE 2000 ===")
