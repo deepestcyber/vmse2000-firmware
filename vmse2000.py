@@ -18,6 +18,7 @@ class Vmse(object):
     audio_device_name = None
     audio_device = None
     fine_data = None
+    audio_file_path = None
     # gpio config
     pin_running = None
     pin_fine = None
@@ -26,6 +27,7 @@ class Vmse(object):
     printer = None
     printer_dev = None
     printer_rate = 38400
+    printer_logo_path = None
     # threads:
     audio_thread = None
     printer_thread = None
@@ -49,6 +51,7 @@ class Vmse(object):
         config.read(self.CONFIG_PATH)
         # audio
         self.audio_device_name = config.get("audio", "device")
+        self.audio_file_path = config.get("audio", "file")
         # gpio
         self.pin_running = config.getint("gpio", "running")
         self.pin_fine = config.getint("gpio", "fine")
@@ -56,6 +59,7 @@ class Vmse(object):
         # printer
         self.printer_dev = config.get("printer", "device")
         self.printer_rate = config.getint("printer", "baudrate")
+        self.printer_logo_path = config.get("printer", "logo")
 
     def _init_audio(self):
         print("initialsing audio output")
@@ -67,8 +71,7 @@ class Vmse(object):
         self.audio_device = device
         # load fine sound data:
         self.fine_data = []
-        FINE = "fine.wav"
-        wav = wave.open(FINE, "rb")
+        wav = wave.open(self.audio_file_path, "rb")
         data = wav.readframes(320)
         while data:
             self.fine_data.append(data)
@@ -123,6 +126,21 @@ class Vmse(object):
                 print("P: negative entry, leaving")
                 break
         print("P: printing thread exiting")
+
+    def print_ticket(self):
+        self.printer.set(align='center')
+        self.printer.image(self.printer_logo_path)
+        self.printer.text("VMSE 2000")
+
+        self.printer.set(align='left')
+        self.printer.text('\n')
+        self.printer.text('You are fined 0.00012700 BTC\n')
+        self.printer.text('for a violation of the\n')
+        self.printer.text('Verbal Morality Statute')
+
+        self.printer.text('\n')
+        self.printer.cut()
+
 
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
@@ -190,6 +208,8 @@ class Vmse(object):
             self.GPIO.output(self.pin_fine, self.GPIO.LOW)
 
     def run(self):
+        print("\n === VMSE 2000 ===")
+        print("Better watch that dirty mouths of yours...\n")
         self.running = True
         try:
             self.start_threads()
@@ -203,7 +223,6 @@ class Vmse(object):
 
 
 def vmse():
-    print("VMSE 2000")
     v = Vmse()
     v.run()
 
