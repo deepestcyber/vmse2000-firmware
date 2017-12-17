@@ -121,7 +121,7 @@ class Vmse(object):
                 print("P: start printing")
                 # TODO:
                 print("P: done printing")
-                self.printing_finish_queue.put(True)
+                self.printer_finish_queue.put(True)
             else:
                 print("P: negative entry, leaving")
                 break
