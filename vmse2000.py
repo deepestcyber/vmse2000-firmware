@@ -184,6 +184,9 @@ class Vmse(object):
     def button_thread_foo(self):
         print("B: button thread started")
         while self.running:
+            if self.fining:
+                time.sleep(0.1)
+                continue
             pressed = not self.GPIO.input(self.pin_button)
             if pressed:
                 self.socket_word_queue.put(True)
