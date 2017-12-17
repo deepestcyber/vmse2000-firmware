@@ -228,7 +228,7 @@ class Vmse(object):
             print("no printer")
 
     def _init_socket(self):
-        if self.udp_port and self.udp_host:
+        if self.udp_port:
             print("listening on UDP %s:%d" % (self.udp_host, self.udp_port))
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.udp_socket.bind(("localhost", self.udp_port))
