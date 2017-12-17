@@ -7,6 +7,7 @@ import time
 import alsaaudio
 import wave
 import ConfigParser
+import Queue
 
 class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
@@ -25,6 +26,14 @@ class Vmse(object):
     printer = None
     printer_dev = None
     printer_rate = 38400
+    # threads:
+    audio_thread = None
+    printer_thread = None
+    # queues
+    audio_start_queue = Queue.Queue()
+    audio_finish_queue = Queue.Queue()
+    printer_start_queue = Queue.Queue()
+    printer_finish_queue = Queue.Queue()
 
     def __init__(self):
         self.read_config()
@@ -65,10 +74,61 @@ class Vmse(object):
             self.fine_data.append(data)
             data = wav.readframes(320)
 
+    def start_threads(self):
+        if self.audio_device:
+            print("starting audio thread")
+            self.audio_thread = threading.Thread(target=self.audio_thread_foo)
+            self.audio_thread.start()
+        if self.printer:
+            print("starting printer thread")
+            self.printer_thread = threading.Thread(target=self.printer_thread_foo)
+            self.printer_thread.start()
+
+    def stop_threads(self):
+        if self.audio_thread:
+            self.audio_start_queue.put(False)
+            self.audio_thread.join()
+        if self.printer_thread:
+            self.printer_start_queue.put(False)
+            self.printer_thread.join()
+
+    def audio_thread_foo(self):
+        print("A: audio thread started")
+        while self.running:
+            entry = self.audio_start_queue.get()
+            if entry:
+                print("A: start playing")
+                self.play_fine()
+                print("A: done playing")
+                self.audio_finish_queue.put(True)
+            else:
+                print("A: negative entry, leaving")
+                break
+        print("A: audio thread exiting")
+
+    def play_fine(self):
+        for data in self.fine_data:
+            self.audio_device.write(data)
+
+    def printing_thread_foo(self):
+        print("P: printer thread started")
+        while self.running:
+            entry = self.printer_start_queue.get()
+            if entry:
+                print("P: start printing")
+                # TODO:
+                print("P: done printing")
+                self.printing_finish_queue.put(True)
+            else:
+                print("P: negative entry, leaving")
+                break
+        print("P: printing thread exiting")
+
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
             print("initialising gpio")
             from RPi import GPIO
+            self.GPIO = GPIO
             GPIO.setmode(GPIO.BCM)
             if self.pin_running:
                 print("running pin on %d" % self.pin_running)
@@ -90,20 +150,56 @@ class Vmse(object):
         else:
             print("no printer")
 
-    def play_fine(self):
-        for data in self.fine_data:
-            self.audio_device.write(data)
+    def do_fine(self):
+        # led on:
+        if self.pin_fine:
+            print("Turning on fine pin %d" % self.pin_fine)
+            self.GPIO.output(self.pin_fine, self.GPIO.HIGH)
+        else:
+            print("No fine pin set")
 
-    def finer(self):
-        self.play_fine()
+        # start blocking stuff in threads:
+        if self.audio_thread:
+            self.audio_start_queue.put(True)
+        if self.printer_thread:
+            self.printer_start_queue.put(True)
+        # wait for threads to do there stuff:
+        if self.audio_thread:
+            self.audio_finish_queue.get()
+        if self.printer_thread:
+            self.printer_thread.get()
+
+        # led off:
+        if self.pin_fine:
+            print("Turning off fine pin %d" % self.pin_fine)
+            self.GPIO.output(self.pin_fine, self.GPIO.LOW)
+
+    def power_on(self):
+        if self.pin_running:
+            self.GPIO.output(self.pin_running, self.GPIO.HIGH)
+
+    def power_off(self):
+        if self.pin_running:
+            self.GPIO.output(self.pin_running, self.GPIO.LOW)
+
+    def clean_up(self):
+        print("cleaning up")
+        if self.pin_running:
+            self.GPIO.output(self.pin_running, self.GPIO.LOW)
+        if self.pin_fine:
+            self.GPIO.output(self.pin_fine, self.GPIO.LOW)
 
     def run(self):
-        running = True
-        return
-        t = threading.Thread(target=self.finer)
-        t.start()
-        t.join()
-        print("donned")
+        self.running = True
+        try:
+            self.start_threads()
+            self.power_on()
+            # self.do_fine()
+            time.sleep(10)
+            self.power_off()
+        finally:
+            self.stop_threads()
+            self.clean_up()
 
 
 def vmse():
