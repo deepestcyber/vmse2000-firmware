@@ -2,7 +2,7 @@ import socket
 
 UDP_IP = "192.168.178.21"
 UDP_PORT = 1800
-MESSAGE = "Hello, World!"
+MESSAGE = "fuck"
 
 print "UDP target IP:", UDP_IP
 print "UDP target port:", UDP_PORT
