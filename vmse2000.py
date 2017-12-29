@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import threading
 import time
+import random
 import alsaaudio
 import wave
 import ConfigParser
@@ -173,15 +174,20 @@ class Vmse(object):
         print("P: printing thread exiting")
 
     def print_ticket(self):
+        xx = "%f" % (random.random() / 1000.0)
         if self.printer_flipped:
             self.printer.set(align='center', flip=True)
             for line in reversed(self.printer_text):
+                if "$FINE$" in line:
+                    line = line.replace("$FINE$", xx)
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
         else:
             self.printer.set(align='center')
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
+                if "$FINE$" in line:
+                    line = line.replace("$FINE$", xx)
                 self.printer.text(line)
         self.printer.cut()
 
@@ -310,7 +316,7 @@ class Vmse(object):
                     self.do_fine()
                 else:
                     print("got word: '%s'" % item)
-                    if item in self.morale_swear_set:
+                    if item.lower() in self.morale_swear_set:
                         print("VIOLATION DETECTED!")
                         self.do_fine()
                     else:
