@@ -189,6 +189,7 @@ class Vmse(object):
             for line in self.printer_text:
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
+                line = line + "\n"
                 self.printer.text(line)
         self.printer.cut()
 
