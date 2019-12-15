@@ -192,7 +192,11 @@ class Vmse(object):
                     line = line.replace("$FINE$", xx)
                     line = line.encode()
                 self.printer.text(line)
-        self.printer.cut()
+        self.print_cut()
+
+    def print_cut(self):
+        self.printer._raw(b"\n\n\n\n\n\n")
+        self.printer._raw(b'\x1d\x56\x00')
 
     def socket_thread_foo(self):
         print("S: socket thread started")
