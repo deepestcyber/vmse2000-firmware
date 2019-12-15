@@ -5,4 +5,4 @@ pyusb
 pyserial
 pillow
 qrcode
--e git://github.com/python-escpos/python-escpos/#escpos
+-e git://github.com/python-escpos/python-escpos/#egg=escpos
