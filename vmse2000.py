@@ -181,7 +181,6 @@ class Vmse(object):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
                 line = line + "\n"
-                line = line.encode()
                 self.printer.text(line)
             self.printer.image(self.printer_logo_path)
         else:
@@ -190,7 +189,6 @@ class Vmse(object):
             for line in self.printer_text:
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
-                    line = line.encode()
                 self.printer.text(line)
         self.printer.cut()
 
