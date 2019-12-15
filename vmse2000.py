@@ -180,7 +180,9 @@ class Vmse(object):
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
-                self.printer.text(line + "\n")
+                line = line + "\n"
+                line = line.encode()
+                self.printer.text(line)
             self.printer.image(self.printer_logo_path)
         else:
             self.printer.set(align='center')
@@ -188,6 +190,7 @@ class Vmse(object):
             for line in self.printer_text:
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
+                    line = line.encode()
                 self.printer.text(line)
         self.printer.cut()
 
@@ -197,6 +200,7 @@ class Vmse(object):
             (r, w, e) = select.select(self.socket_list, [], [], 0.1)
             for s in r:
                 data, addr = s.recvfrom(1024)
+                data = "fuck"
                 # TODO: fix this, this needs buffering
                 print("%s sent: '%s'" % (addr, data))
                 for word in data.split(" "):

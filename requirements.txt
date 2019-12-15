@@ -3,6 +3,6 @@ configparser
 RPi.GPIO
 escpos
 pyusb
-serial
+pyserial
 pillow
 qrcode
