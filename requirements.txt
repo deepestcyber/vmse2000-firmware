@@ -1,8 +1,8 @@
 pyalsaaudio
 configparser
 RPi.GPIO
-escpos
 pyusb
 pyserial
 pillow
 qrcode
+-e git://github.com/python-escpos/python-escpos/
