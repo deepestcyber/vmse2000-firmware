@@ -176,7 +176,7 @@ class Vmse(object):
     def print_ticket(self):
         xx = "%f" % (random.random() / 1000.0)
         if self.printer_flipped:
-            self.printer.set(align=b'center', flip=True)
+            self.printer.set(align='center', flip=True)
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
@@ -185,18 +185,18 @@ class Vmse(object):
                 self.printer.text(line)
             self.printer.image(self.printer_logo_path)
         else:
-            self.printer.set(align=b'center')
+            self.printer.set(align='center')
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
                     line = line.encode()
                 self.printer.text(line)
-        self.print_cut()
+        self.printer.cut()
 
-    def print_cut(self):
-        self.printer._raw(b"\n\n\n\n\n\n")
-        self.printer._raw(b'\x1d\x56\x00')
+    #def print_cut(self):
+    #    self.printer._raw(b"\n\n\n\n\n\n")
+    #    self.printer._raw(b'\x1d\x56\x00')
 
     def socket_thread_foo(self):
         print("S: socket thread started")
