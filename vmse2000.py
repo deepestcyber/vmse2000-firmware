@@ -176,7 +176,7 @@ class Vmse(object):
     def print_ticket(self):
         xx = "%f" % (random.random() / 1000.0)
         if self.printer_flipped:
-            self.printer.set(align='center', flip=True)
+            self.printer.set(align=b'center', flip=True)
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
@@ -185,7 +185,7 @@ class Vmse(object):
                 self.printer.text(line)
             self.printer.image(self.printer_logo_path)
         else:
-            self.printer.set(align='center')
+            self.printer.set(align=b'center')
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
                 if "$FINE$" in line:
