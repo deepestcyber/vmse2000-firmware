@@ -307,7 +307,7 @@ class Vmse(object):
             while self.running:
                 try:
                     item = self.socket_word_queue.get(True, 0.1)
-                except Queue.Empty:
+                except queue.Empty:
                     # that's okay, dude! we'll just try again...
                     continue
                 if item is True:
