@@ -1,0 +1,3 @@
+pyalsaaudio
+configparser
+RPi.GPIO

@@ -1,4 +1,4 @@
-#!/bin/env python2.7
+#!/bin/env python3
 
 from __future__ import print_function
 
@@ -7,8 +7,8 @@ import time
 import random
 import alsaaudio
 import wave
-import ConfigParser
-import Queue
+import configparser
+import queue
 import socket
 import select
 
@@ -47,11 +47,11 @@ class Vmse(object):
     socket_thread = None
     button_thread = None
     # queues
-    audio_start_queue = Queue.Queue()
-    audio_finish_queue = Queue.Queue()
-    printer_start_queue = Queue.Queue()
-    printer_finish_queue = Queue.Queue()
-    socket_word_queue = Queue.Queue()
+    audio_start_queue = queue.Queue()
+    audio_finish_queue = queue.Queue()
+    printer_start_queue = queue.Queue()
+    printer_finish_queue = queue.Queue()
+    socket_word_queue = queue.Queue()
 
     def __init__(self):
         self.read_config()
@@ -67,7 +67,7 @@ class Vmse(object):
         print("%d words on blacklist" % len(self.morale_swear_set))
 
     def read_config(self):
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         print("reading config '%s'" % self.DEFAULT_CONFIG_PATH)
         config.read(self.DEFAULT_CONFIG_PATH)
         print("reading config '%s'" % self.CONFIG_PATH)
