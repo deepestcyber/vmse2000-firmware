@@ -201,6 +201,7 @@ class Vmse(object):
                 data, addr = s.recvfrom(1024)
                 # TODO: fix this, this needs buffering
                 print(f"{addr} sent: '{data}'")
+                data = str(data, 'utf-8')
                 for word in data.split(" "):
                     if word:
                         self.socket_word_queue.put(word)
