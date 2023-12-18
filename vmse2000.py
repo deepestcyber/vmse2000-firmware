@@ -15,7 +15,6 @@ class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
     CONFIG_PATH = "vmse2000.ini"
     #
-    GPIO = None
     running = False
     fining = False
     # audio config
@@ -264,7 +263,7 @@ class Vmse(object):
         self.fining = True
         if self.pin_fine:
             print(f"Turning on fine pin {self.pin_fine}")
-            self.GPIO.output(self.pin_fine, self.GPIO.HIGH)
+            self.gpio_fine.on()
         else:
             print("No fine pin set")
 
@@ -282,25 +281,23 @@ class Vmse(object):
         # led off:
         if self.pin_fine:
             print(f"Turning off fine pin {self.pin_fine}")
-            self.GPIO.output(self.pin_fine, self.GPIO.LOW)
+            self.gpio_fine.off()
         self.fining = False
 
     def power_on(self):
         if self.pin_running:
-            self.GPIO.output(self.pin_running, self.GPIO.HIGH)
+            self.gpio_running.on()
 
     def power_off(self):
         if self.pin_running:
-            self.GPIO.output(self.pin_running, self.GPIO.LOW)
+            self.gpio_running.off()
 
     def clean_up(self):
         print("cleaning up")
         if self.pin_running:
-            self.GPIO.output(self.pin_running, self.GPIO.LOW)
+            self.gpio_running.off()
         if self.pin_fine:
-            self.GPIO.output(self.pin_fine, self.GPIO.LOW)
-        if self.GPIO:
-            self.GPIO.cleanup()
+            self.gpio_fine.off()
 
     def run(self):
         print("\n === VMSE 2000 ===")
