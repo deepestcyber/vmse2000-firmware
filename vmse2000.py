@@ -6,7 +6,7 @@ import random
 import alsaaudio
 import wave
 from configparser import ConfigParser
-from queue import Queue
+from queue import Queue, Empty
 import socket
 import select
 
@@ -310,7 +310,7 @@ class Vmse(object):
             while self.running:
                 try:
                     item = self.socket_word_queue.get(True, 0.1)
-                except Queue.Empty:
+                except Empty:
                     # that's okay, dude! we'll just try again...
                     continue
                 if item is True:
