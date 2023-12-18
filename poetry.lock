@@ -97,6 +97,24 @@ files = [
 ]
 
 [[package]]
+name = "colorzero"
+version = "2.0"
+description = "Yet another Python color library"
+optional = false
+python-versions = "*"
+files = [
+    {file = "colorzero-2.0-py2.py3-none-any.whl", hash = "sha256:0e60d743a6b8071498a56465f7719c96a5e92928f858bab1be2a0d606c9aa0f8"},
+    {file = "colorzero-2.0.tar.gz", hash = "sha256:e7d5a5c26cd0dc37b164ebefc609f388de24f8593b659191e12d85f8f9d5eb58"},
+]
+
+[package.dependencies]
+setuptools = "*"
+
+[package.extras]
+doc = ["pkginfo", "sphinx", "sphinx-rtd-theme"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
 name = "flake8"
 version = "6.1.0"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -111,6 +129,24 @@ files = [
 mccabe = ">=0.7.0,<0.8.0"
 pycodestyle = ">=2.11.0,<2.12.0"
 pyflakes = ">=3.1.0,<3.2.0"
+
+[[package]]
+name = "gpiozero"
+version = "2.0"
+description = "A simple interface to GPIO devices with Raspberry Pi"
+optional = false
+python-versions = "*"
+files = [
+    {file = "gpiozero-2.0-py3-none-any.whl", hash = "sha256:a103ff70c96f333841480fe1b1dbb8bc869438805ed291bf0b8bf7c95d3b915d"},
+    {file = "gpiozero-2.0.tar.gz", hash = "sha256:403bcc9e7f24f0877653e7fced91ba51508d5197c9d1f80e383fe6693b9c3c27"},
+]
+
+[package.dependencies]
+colorzero = "*"
+
+[package.extras]
+doc = ["sphinx", "sphinx-rtd-theme"]
+test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "importlib-resources"
@@ -516,4 +552,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "60d946028c3ca5a5811924ec7ca57fd7fcc26acea10467afd47b40b040e87987"
+content-hash = "de194e800cf2f08a892beb0243fba7e4af02db8cce44ac12b67c0ef3415856b8"
