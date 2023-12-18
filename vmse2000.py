@@ -60,15 +60,17 @@ class Vmse(object):
         self._load_morale()
 
     def _load_morale(self):
-        print("loading morale from %s" % self.morale_swear_path)
-        self.morale_swear_set = set([line.rstrip('\n') for line in open(self.morale_swear_path)])
-        print("%d words on blacklist" % len(self.morale_swear_set))
+        print(f"loading morale from {self.morale_swear_path}")
+        self.morale_swear_set = set(
+            [line.rstrip("\n") for line in open(self.morale_swear_path)]
+        )
+        print(f"{len(self.morale_swear_set)} words on blacklist")
 
     def read_config(self):
         config = ConfigParser()
-        print("reading config '%s'" % self.DEFAULT_CONFIG_PATH)
+        print("reading config '{self.DEFAULT_CONFIG_PATH}'")
         config.read(self.DEFAULT_CONFIG_PATH)
-        print("reading config '%s'" % self.CONFIG_PATH)
+        print("reading config '{self.CONFIG_PATH}'")
         config.read(self.CONFIG_PATH)
         # audio
         self.audio_device_name = config.get("audio", "device")
@@ -172,16 +174,16 @@ class Vmse(object):
         print("P: printing thread exiting")
 
     def print_ticket(self):
-        xx = "%f" % (random.random() / 1000.0)
+        xx = "{:f}".format(random.random() / 1000.0)
         if self.printer_flipped:
-            self.printer.set(align='center', flip=True)
+            self.printer.set(align="center", flip=True)
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
         else:
-            self.printer.set(align='center')
+            self.printer.set(align="center")
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
                 if "$FINE$" in line:
@@ -196,7 +198,7 @@ class Vmse(object):
             for s in r:
                 data, addr = s.recvfrom(1024)
                 # TODO: fix this, this needs buffering
-                print("%s sent: '%s'" % (addr, data))
+                print(f"{addr} sent: '{data}'")
                 for word in data.split(" "):
                     if word:
                         self.socket_word_queue.put(word)
@@ -220,31 +222,37 @@ class Vmse(object):
         if self.pin_running or self.pin_fine or self.pin_button:
             print("initialising gpio")
             from RPi import GPIO
+
             self.GPIO = GPIO
             GPIO.setmode(GPIO.BCM)
             if self.pin_running:
-                print("running pin on %d" % self.pin_running)
+                print(f"running pin on {self.pin_running}")
                 GPIO.setup(self.pin_running, GPIO.OUT)
             if self.pin_fine:
-                print("fine pin on %d" % self.pin_fine)
+                print(f"fine pin on {self.pin_fine}")
                 GPIO.setup(self.pin_fine, GPIO.OUT)
             if self.pin_button:
-                print("button pin on %d (pulluped)" % self.pin_button)
+                print(f"button pin on {self.pin_button} (pulluped)")
                 GPIO.setup(self.pin_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         else:
             print("skipping gpio initialisation")
 
     def _init_printer(self):
         if self.printer_dev:
-            print("initialising serial printer on device '%s' at %d" % (self.printer_dev, self.printer_rate))
+            print(
+                f"initialising serial printer on device '{self.printer_dev}' at {self.printer_rate}"
+            )
             import escpos.printer
-            self.printer = escpos.printer.Serial(self.printer_dev, baudrate=self.printer_rate)
+
+            self.printer = escpos.printer.Serial(
+                self.printer_dev, baudrate=self.printer_rate
+            )
         else:
             print("no printer")
 
     def _init_socket(self):
         if self.udp_port:
-            print("listening on UDP %s:%d" % (self.udp_host, self.udp_port))
+            print(f"listening on UDP {self.udp_host}:{self.udp_port}")
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.udp_socket.bind((self.udp_host, self.udp_port))
             self.socket_list.append(self.udp_socket)
@@ -255,7 +263,7 @@ class Vmse(object):
         # led on:
         self.fining = True
         if self.pin_fine:
-            print("Turning on fine pin %d" % self.pin_fine)
+            print(f"Turning on fine pin {self.pin_fine}")
             self.GPIO.output(self.pin_fine, self.GPIO.HIGH)
         else:
             print("No fine pin set")
@@ -273,7 +281,7 @@ class Vmse(object):
 
         # led off:
         if self.pin_fine:
-            print("Turning off fine pin %d" % self.pin_fine)
+            print(f"Turning off fine pin {self.pin_fine}")
             self.GPIO.output(self.pin_fine, self.GPIO.LOW)
         self.fining = False
 
@@ -313,7 +321,7 @@ class Vmse(object):
                     print("Tautologic, my dear Watson!")
                     self.do_fine()
                 else:
-                    print("got word: '%s'" % item)
+                    print(f"got word: '{item}'")
                     if item.lower() in self.morale_swear_set:
                         print("VIOLATION DETECTED!")
                         self.do_fine()
@@ -333,6 +341,7 @@ class Vmse(object):
 def vmse():
     v = Vmse()
     v.run()
+
 
 if __name__ == "__main__":
     vmse()
