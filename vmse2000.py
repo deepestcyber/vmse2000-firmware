@@ -27,6 +27,9 @@ class Vmse(object):
     pin_running = None
     pin_fine = None
     pin_button = None
+    gpio_running = None
+    gpio_fine = None
+    gpio_button = None
     # printer config
     printer = None
     printer_dev = None
@@ -210,8 +213,7 @@ class Vmse(object):
             if self.fining:
                 time.sleep(0.1)
                 continue
-            pressed = not self.GPIO.input(self.pin_button)
-            if pressed:
+            if self.gpio_button.is_pressed:
                 self.socket_word_queue.put(True)
                 # unprelling:
                 time.sleep(0.3)
@@ -221,19 +223,17 @@ class Vmse(object):
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
             print("initialising gpio")
-            from RPi import GPIO
+            from gpiozero import Button, OutputDevice
 
-            self.GPIO = GPIO
-            GPIO.setmode(GPIO.BCM)
             if self.pin_running:
                 print(f"running pin on {self.pin_running}")
-                GPIO.setup(self.pin_running, GPIO.OUT)
+                self.gpio_running = OutputDevice(self.pin_running)
             if self.pin_fine:
                 print(f"fine pin on {self.pin_fine}")
-                GPIO.setup(self.pin_fine, GPIO.OUT)
+                self.gpio_fine = OutputDevice(self.pin_fine)
             if self.pin_button:
                 print(f"button pin on {self.pin_button} (pulluped)")
-                GPIO.setup(self.pin_button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                self.gpio_button = Button(self.pin_button)
         else:
             print("skipping gpio initialisation")
 
