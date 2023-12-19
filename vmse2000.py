@@ -95,14 +95,7 @@ class Vmse(object):
 
     def _init_audio(self):
         print("initialsing audio output")
-        device = alsaaudio.PCM(
-            device=self.audio_device_name,
-            format=alsaaudio.PCM_FORMAT_S16_LE,
-            rate=44_100,
-            channels=1,
-            periodsize=32,
-        )
-        self.audio_device = device
+
         # load fine sound data:
         self.fine_data = []
         with wave.open(self.audio_file_path, "rb") as wav:
@@ -111,6 +104,15 @@ class Vmse(object):
             while data:
                 self.fine_data.append(data)
                 data = wav.readframes(period_size)
+
+        device = alsaaudio.PCM(
+            device=self.audio_device_name,
+            format=alsaaudio.PCM_FORMAT_S16_LE,
+            rate=44_100,
+            channels=1,
+            periodsize=period_size,
+        )
+        self.audio_device = device
 
     def start_threads(self):
         if self.audio_device:
