@@ -70,9 +70,9 @@ class Vmse(object):
 
     def read_config(self):
         config = ConfigParser()
-        print("reading config '{self.DEFAULT_CONFIG_PATH}'")
+        print(f"reading config '{self.DEFAULT_CONFIG_PATH}'")
         config.read(self.DEFAULT_CONFIG_PATH)
-        print("reading config '{self.CONFIG_PATH}'")
+        print(f"reading config '{self.CONFIG_PATH}'")
         config.read(self.CONFIG_PATH)
         # audio
         self.audio_device_name = config.get("audio", "device")
@@ -95,11 +95,13 @@ class Vmse(object):
 
     def _init_audio(self):
         print("initialsing audio output")
-        device = alsaaudio.PCM(device="default")
-        device.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-        device.setchannels(1)
-        device.setrate(44100)
-        device.setperiodsize(320)
+        device = alsaaudio.PCM(
+            device=self.audio_device_name,
+            format=alsaaudio.PCM_FORMAT_S16_LE,
+            rate=44_100,
+            channels=1,
+            periodsize=320,
+        )
         self.audio_device = device
         # load fine sound data:
         self.fine_data = []
