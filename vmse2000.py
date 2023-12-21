@@ -9,6 +9,7 @@ from configparser import ConfigParser
 from queue import Queue, Empty
 import socket
 import select
+import logging
 
 
 class Vmse(object):
@@ -163,8 +164,11 @@ class Vmse(object):
         print("A: audio thread exiting")
 
     def play_fine(self):
-        for data in self.fine_data:
-            self.audio_device.write(data)
+        try:
+            for data in self.fine_data:
+                self.audio_device.write(data)
+        except alsaaudio.ALSAAudioError as e:
+            logging.exception("Writing to device failed")
 
     def printer_thread_foo(self):
         print("P: printer thread started")
