@@ -11,6 +11,9 @@ import socket
 import select
 import logging
 
+import gpiod
+from gpiod.line import Direction, Value
+
 
 class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
@@ -109,7 +112,7 @@ class Vmse(object):
         device = alsaaudio.PCM(
             device=self.audio_device_name,
             format=alsaaudio.PCM_FORMAT_S16_LE,
-            rate=44_100,
+            rate=48_000,
             channels=1,
             periodsize=period_size,
         )
@@ -210,7 +213,7 @@ class Vmse(object):
                 data, addr = s.recvfrom(1024)
                 # TODO: fix this, this needs buffering
                 print(f"{addr} sent: '{data}'")
-                data = str(data, 'utf-8')
+                data = str(data, "utf-8")
                 for word in data.split(" "):
                     if word:
                         self.socket_word_queue.put(word)
@@ -222,7 +225,15 @@ class Vmse(object):
             if self.fining:
                 time.sleep(0.1)
                 continue
-            if self.gpio_button.is_pressed:
+
+            pressed = False
+
+            # block and wait for edge events
+            for ev in self.gpio_button.read_edge_events():
+                if ev.line_offset == self.pin_button:
+                    pressed = True
+
+            if pressed:
                 self.socket_word_queue.put(True)
                 # unprelling:
                 time.sleep(0.3)
@@ -232,17 +243,39 @@ class Vmse(object):
     def _init_gpio(self):
         if self.pin_running or self.pin_fine or self.pin_button:
             print("initialising gpio")
-            from gpiozero import Button, OutputDevice
+
+            # this might not work on raspi <5, sorry, cannot test rn
+            chip = gpiod.Chip("/dev/gpiochip4")
 
             if self.pin_running:
                 print(f"running pin on {self.pin_running}")
-                self.gpio_running = OutputDevice(self.pin_running)
+                self.gpio_running = chip.request_lines(
+                    config={
+                        self.pin_running: gpiod.LineSettings(
+                            direction=Direction.OUTPUT,
+                        ),
+                    }
+                )
             if self.pin_fine:
                 print(f"fine pin on {self.pin_fine}")
-                self.gpio_fine = OutputDevice(self.pin_fine)
+                self.gpio_fine = chip.request_lines(
+                    config={
+                        self.pin_fine: gpiod.LineSettings(
+                            direction=Direction.OUTPUT,
+                        ),
+                    }
+                )
             if self.pin_button:
                 print(f"button pin on {self.pin_button} (pulluped)")
-                self.gpio_button = Button(self.pin_button)
+                self.gpio_button = chip.request_lines(
+                    config={
+                        self.pin_button: gpiod.LineSettings(
+                            edge_detection=Edge.BOTH,
+                            bias=Bias.PULL_UP,
+                            debounce_period=timedelta(milliseconds=10),
+                        ),
+                    }
+                )
         else:
             print("skipping gpio initialisation")
 
@@ -273,7 +306,7 @@ class Vmse(object):
         self.fining = True
         if self.pin_fine:
             print(f"Turning on fine pin {self.pin_fine}")
-            self.gpio_fine.on()
+            self.gpio_fine.set_value(self.pin_fine, Value.ACTIVE)
         else:
             print("No fine pin set")
 
@@ -291,23 +324,23 @@ class Vmse(object):
         # led off:
         if self.pin_fine:
             print(f"Turning off fine pin {self.pin_fine}")
-            self.gpio_fine.off()
+            self.gpio_fine.set_value(self.pin_fine, Value.INACTIVE)
         self.fining = False
 
     def power_on(self):
         if self.pin_running:
-            self.gpio_running.on()
+            self.gpio_running.set_value(self.pin_running, Value.ACTIVE)
 
     def power_off(self):
         if self.pin_running:
-            self.gpio_running.off()
+            self.gpio_running.set_value(self.pin_running, Value.INACTIVE)
 
     def clean_up(self):
         print("cleaning up")
         if self.pin_running:
-            self.gpio_running.off()
+            self.gpio_running.set_value(self.pin_running, Value.INACTIVE)
         if self.pin_fine:
-            self.gpio_fine.off()
+            self.gpio_fine.set_value(self.pin_running, Value.INACTIVE)
 
     def run(self):
         print("\n === VMSE 2000 ===")
