@@ -112,7 +112,7 @@ class Vmse(object):
         device = alsaaudio.PCM(
             device=self.audio_device_name,
             format=alsaaudio.PCM_FORMAT_S16_LE,
-            rate=48_000,
+            rate=44_100,
             channels=1,
             periodsize=period_size,
         )
