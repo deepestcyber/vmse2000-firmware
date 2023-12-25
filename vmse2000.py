@@ -42,9 +42,6 @@ class Vmse(object):
     udp_host = None
     udp_port = None
     socket_list = []
-    # morale config
-    morale_swear_path = None
-    morale_swear_set = None
     # threads:
     audio_thread = None
     printer_thread = None
@@ -63,14 +60,6 @@ class Vmse(object):
         self._init_gpio()
         self._init_printer()
         self._init_socket()
-        self._load_morale()
-
-    def _load_morale(self):
-        print(f"loading morale from {self.morale_swear_path}")
-        self.morale_swear_set = set(
-            [line.rstrip("\n") for line in open(self.morale_swear_path)]
-        )
-        print(f"{len(self.morale_swear_set)} words on blacklist")
 
     def read_config(self):
         config = ConfigParser()
@@ -94,8 +83,6 @@ class Vmse(object):
         # socket
         self.udp_port = config.getint("socket", "udp_port")
         self.udp_host = config.get("socket", "udp_host")
-        # morale
-        self.morale_swear_path = config.get("morale", "swear_file")
 
     def _init_audio(self):
         print("initialsing audio output")
@@ -362,11 +349,8 @@ class Vmse(object):
                     self.do_fine()
                 else:
                     print(f"got word: '{item}'")
-                    if item.lower() in self.morale_swear_set:
-                        print("VIOLATION DETECTED!")
-                        self.do_fine()
-                    else:
-                        print("seems fine...")
+                    print("VIOLATION DETECTED!")
+                    self.do_fine()
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)
