@@ -38,6 +38,8 @@ class Vmse(object):
     printer_dev = None
     printer_rate = 38400
     printer_logo_path = None
+    printer_text = "Violation"
+    printer_flipped = False
     # socket config
     udp_host = None
     udp_port = None
@@ -83,6 +85,10 @@ class Vmse(object):
         # socket
         self.udp_port = config.getint("socket", "udp_port")
         self.udp_host = config.get("socket", "udp_host")
+        #
+        print("Text is:")
+        for line in self.printer_text:
+            print(f"  {line}")
 
     def _init_audio(self):
         print("initialsing audio output")
@@ -166,7 +172,7 @@ class Vmse(object):
             entry = self.printer_start_queue.get()
             if entry:
                 print("P: start printing")
-                self.print_ticket()
+                self.print_ticket(entry)
                 print("P: done printing")
                 self.printer_finish_queue.put(True)
             else:
@@ -174,7 +180,7 @@ class Vmse(object):
                 break
         print("P: printing thread exiting")
 
-    def print_ticket(self):
+    def print_ticket(self, item=True):
         xx = "{:f}".format(random.random() / 1000.0)
         if self.printer_flipped:
             self.printer.set(align="center", flip=True)
@@ -288,7 +294,7 @@ class Vmse(object):
         else:
             print("No UDP socket")
 
-    def do_fine(self):
+    def do_fine(self, item=True):
         # led on:
         self.fining = True
         if self.pin_fine:
@@ -301,7 +307,7 @@ class Vmse(object):
         if self.audio_thread:
             self.audio_start_queue.put(True)
         if self.printer_thread:
-            self.printer_start_queue.put(True)
+            self.printer_start_queue.put(item)
         # wait for threads to do there stuff:
         if self.audio_thread:
             self.audio_finish_queue.get()
@@ -350,7 +356,7 @@ class Vmse(object):
                 else:
                     print(f"got word: '{item}'")
                     print("VIOLATION DETECTED!")
-                    self.do_fine()
+                    self.do_fine(item)
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)
