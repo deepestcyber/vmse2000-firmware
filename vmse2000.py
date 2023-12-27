@@ -182,6 +182,7 @@ class Vmse(object):
 
     def print_ticket(self, item=True):
         xx = "{:f}".format(random.random() / 1000.0)
+        print(f"item is {item}")
         if self.printer_flipped:
             self.printer.set(align="center", flip=True)
             self.printer.image("assets/violation-flipped.png")
