@@ -184,18 +184,26 @@ class Vmse(object):
         xx = "{:f}".format(random.random() / 1000.0)
         if self.printer_flipped:
             self.printer.set(align="center", flip=True)
+            self.printer.image("assets/violation-flipped.png")
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
+                    if isinstance(item, str):
+                        line = line.replace("$ITEM$", item)
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
+            self.printer.image("assets/morality-flipped.png")
         else:
             self.printer.set(align="center")
+            self.printer.image("assets/morality.png")
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
-                self.printer.text(line)
+                if isinstance(item, str):
+                    line = line.replace("$ITEM$", item)
+                self.printer.text(line + "\n")
+            self.printer.image("assets/violation.png")
         self.printer.cut()
 
     def socket_thread_foo(self):
