@@ -189,8 +189,8 @@ class Vmse(object):
             for line in reversed(self.printer_text):
                 if "$FINE$" in line:
                     line = line.replace("$FINE$", xx)
-                    if isinstance(item, str):
-                        line = line.replace("$ITEM$", item)
+                if isinstance(item, str):
+                    line = line.replace("$ITEM$", item)
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
             self.printer.image("assets/morality-flipped.png")
