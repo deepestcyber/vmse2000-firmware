@@ -1,0 +1,33 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          vmse
+# Required-Start: udev mountkernfs $remote_fs
+# Required-Stop:
+# Default-Start: S 2 3 4 5
+# Default-Stop:
+# Short-Description: Start VMSE2000
+# Description:
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+        start-stop-daemon --start --quiet --oknodo --chuid 1000:1000 --pidfile /run/vmse.pid --exec /home/pi/vmse_start.sh
+    ;;
+  stop)
+        start-stop-daemon --stop --quiet --oknodo --pidfile /run/vmse.pid --exec /home/pi/vmse_start.sh
+        tmux kill-session -t VMSE
+    ;;
+  restart)
+        start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile /run/vmse.pid --exec /home/pi/vmse_start.sh
+        tmux kill-session -t VMSE
+        start-stop-daemon --start --quiet --oknodo --chuid 1000:1000 --pidfile /run/vmse.pid --exec /home/pi/vmse_start.sh
+    ;;
+  force-reload)
+    ;;
+  *)
+    echo "Usage: $0 start" >&2
+    exit 3
+    ;;
+esac
