@@ -77,8 +77,12 @@ class Vmse(object):
         self.pin_fine = config.getint("gpio", "fine")
         self.pin_button = config.getint("gpio", "button")
         # printer
-        self.printer_dev = config.get("printer", "device")
-        self.printer_rate = config.getint("printer", "baudrate")
+        self.printer_vendor_id = int(
+            config.get("printer", "vendor_id", fallback=0), 16)
+        self.printer_device_id = int(
+            config.get("printer", "device_id", fallback=0), 16)
+        self.printer_dev = config.get("printer", "device", fallback=None)
+        self.printer_rate = config.getint("printer", "baudrate", fallback=9600)
         self.printer_logo_path = config.get("printer", "logo")
         self.printer_flipped = config.getboolean("printer", "flipped")
         self.printer_text = config.get("printer", "text").split("|")
@@ -282,15 +286,29 @@ class Vmse(object):
             print("skipping gpio initialisation")
 
     def _init_printer(self):
-        if self.printer_dev:
-            print(
-                f"initialising serial printer on device '{self.printer_dev}' at {self.printer_rate}"
-            )
+        if self.printer_dev or self.printer_vendor_id:
+
             import escpos.printer
 
-            self.printer = escpos.printer.Serial(
-                self.printer_dev, baudrate=self.printer_rate
-            )
+            if self.printer_vendor_id:
+                print(
+                    f"initialising usb printer {self.printer_vendor_id}:"
+                    f"{self.printer_device_id}"
+                )
+                self.printer = escpos.printer.Usb(
+                    self.printer_vendor_id,
+                    self.printer_device_id,
+                    profile="TM-T88IV",
+                )
+            else:
+                print(
+                    f"initialising serial printer on device "
+                    f"'{self.printer_dev}' at {self.printer_rate}"
+                )
+                self.printer = escpos.printer.Serial(
+                    self.printer_dev, baudrate=self.printer_rate
+                )
+            assert self.printer.is_usable()
         else:
             print("no printer")
 
