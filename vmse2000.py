@@ -172,6 +172,8 @@ class Vmse(object):
 
     def play_fine(self):
         try:
+            # drain any pending audio to prevent underruns errors:
+            self.audio_device.drop()
             for data in self.fine_data:
                 self.audio_device.write(data)
         except alsaaudio.ALSAAudioError as e:
