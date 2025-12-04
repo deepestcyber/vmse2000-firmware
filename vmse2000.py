@@ -40,6 +40,8 @@ class Vmse(object):
     printer_logo_path = None
     printer_text = "Violation"
     printer_flipped = False
+    printer_vendor_id = None
+    printer_device_id = None
     # socket config
     udp_host = None
     udp_port = None
@@ -73,9 +75,14 @@ class Vmse(object):
         self.audio_device_name = config.get("audio", "device")
         self.audio_file_path = config.get("audio", "file")
         # gpio
-        self.pin_running = config.getint("gpio", "running")
-        self.pin_fine = config.getint("gpio", "fine")
-        self.pin_button = config.getint("gpio", "button")
+        def get_gpio(name):
+            val = config.get("gpio", name)
+            if val is not None and val != "":
+                return int(val)
+            return None
+        self.pin_running = get_gpio("running")
+        self.pin_fine = get_gpio("fine")
+        self.pin_button = get_gpio("button")
         # printer
         self.printer_vendor_id = int(
             config.get("printer", "vendor_id", fallback=0), 16)
@@ -95,7 +102,7 @@ class Vmse(object):
             print(f"  {line}")
 
     def _init_audio(self):
-        print("initialsing audio output")
+        print("initialising audio output")
 
         # load fine sound data:
         self.fine_data = []
@@ -247,13 +254,13 @@ class Vmse(object):
                 time.sleep(0.01)
 
     def _init_gpio(self):
-        if self.pin_running or self.pin_fine or self.pin_button:
+        if self.pin_running is not None or self.pin_fine is not None or self.pin_button is not None:
             print("initialising gpio")
 
             # this might not work on raspi <5, sorry, cannot test rn
             chip = gpiod.Chip("/dev/gpiochip4")
 
-            if self.pin_running:
+            if self.pin_running is not None:
                 print(f"running pin on {self.pin_running}")
                 self.gpio_running = chip.request_lines(
                     config={
@@ -262,7 +269,7 @@ class Vmse(object):
                         ),
                     }
                 )
-            if self.pin_fine:
+            if self.pin_fine is not None:
                 print(f"fine pin on {self.pin_fine}")
                 self.gpio_fine = chip.request_lines(
                     config={
@@ -271,7 +278,7 @@ class Vmse(object):
                         ),
                     }
                 )
-            if self.pin_button:
+            if self.pin_button is not None:
                 print(f"button pin on {self.pin_button} (pulluped)")
                 self.gpio_button = chip.request_lines(
                     config={
