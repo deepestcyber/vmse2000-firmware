@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import csv
 import threading
 import time
 import random
@@ -10,6 +9,7 @@ from queue import Queue, Empty
 import socket
 import select
 import logging
+import json
 
 import gpiod
 from gpiod.line import Direction, Value
@@ -342,11 +342,14 @@ class Vmse(object):
 
     def store_evidence(self, profanity):
         if self.evidence_file:
-            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+            data = {
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "profanity": profanity,
+            }
             try:
                 with open(self.evidence_file, "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([timestamp, profanity])
+                    json.dump(data, f)
+                    f.write("\n")
             except Exception:
                 logging.exception("Storing evidence failed")
         else:
