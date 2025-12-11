@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import threading
 import time
 import random
@@ -10,6 +9,7 @@ from queue import Queue, Empty
 import socket
 import select
 import logging
+import json
 
 import gpiod
 from gpiod.line import Direction, Value
@@ -42,6 +42,8 @@ class Vmse(object):
     printer_flipped = False
     printer_vendor_id = None
     printer_device_id = None
+    # evidence
+    evidence_file = None
     # socket config
     udp_host = None
     udp_port = None
@@ -96,6 +98,14 @@ class Vmse(object):
         # socket
         self.udp_port = config.getint("socket", "udp_port")
         self.udp_host = config.get("socket", "udp_host")
+        # evidence vault
+        self.evidence_file = config.get("prosecution", "evidence_file", fallback=None)
+        if self.evidence_file == "":
+            self.evidence_file = None
+        if self.evidence_file:
+            print(f"evidence will be stored in '{self.evidence_file}'")
+        else:
+            print("no evidence vault configured, prosecutions will be tricky...")
         #
         print("Text is:")
         for line in self.printer_text:
@@ -330,6 +340,21 @@ class Vmse(object):
         else:
             print("No UDP socket")
 
+    def store_evidence(self, profanity):
+        if self.evidence_file:
+            data = {
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "profanity": profanity,
+            }
+            try:
+                with open(self.evidence_file, "a") as f:
+                    json.dump(data, f)
+                    f.write("\n")
+            except Exception:
+                logging.exception("Storing evidence failed")
+        else:
+            print("no evidence vault configured, cannot store evidence")
+
     def do_fine(self, item=True):
         # led on:
         self.fining = True
@@ -338,6 +363,8 @@ class Vmse(object):
             self.gpio_fine.set_value(self.pin_fine, Value.ACTIVE)
         else:
             print("No fine pin set")
+
+        self.store_evidence(item)
 
         # start blocking stuff in threads:
         if self.audio_thread:
