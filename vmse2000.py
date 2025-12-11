@@ -214,6 +214,8 @@ class Vmse(object):
                     line = line.replace("$FINE$", xx)
                 if isinstance(item, str):
                     line = line.replace("$ITEM$", item)
+                if "$TIMESTAMP$" in line:
+                    line = line.replace("$TIMESTAMP$", time.strftime("%Y-%m-%d %H:%M:%S"))
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
             self.printer.image("assets/morality-flipped.png")
@@ -226,6 +228,8 @@ class Vmse(object):
                     line = line.replace("$FINE$", xx)
                 if isinstance(item, str):
                     line = line.replace("$ITEM$", item)
+                if "$TIMESTAMP$" in line:
+                    line = line.replace("$TIMESTAMP$", time.strftime("%Y-%m-%d %H:%M:%S"))
                 self.printer.text(line + "\n")
             self.printer.image("assets/violation.png")
         self.printer.cut()
