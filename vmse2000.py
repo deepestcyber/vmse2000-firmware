@@ -39,7 +39,7 @@ class ConsolePrinter:
 
 class Violation:
     """A detected violation event."""
-    def __init__(self, profanity: bool|str = True, timestamp=None, fine=None, token=None):
+    def __init__(self, profanity: bool|str = True, timestamp=None, fine=None, token=None, ticket_number=None):
         if profanity is True:
             self.profanity = "<censored>"
         else:
@@ -47,6 +47,10 @@ class Violation:
         self.timestamp: datetime.datetime = timestamp or datetime.datetime.now().astimezone()
         self.fine: float = fine or random.random() / 1000.0
         self.token: str | None = token
+        if ticket_number is None:
+            self.ticket_number = random.randint(1, 10_000_000)
+        else:
+            self.ticket_number = ticket_number
 
     def __str__(self):
         return f"Violation(profanity='{self.profanity}', timestamp={self.timestamp.isoformat()}, fine={self.fine}, token={self.token})"
@@ -58,6 +62,7 @@ class Vmse(object):
     #
     running = False
     fining = False
+    ticket_number = 0
     # audio config
     audio_device_name = None
     audio_device = None
@@ -84,6 +89,9 @@ class Vmse(object):
     # badge config
     token_file = None
     token_none = ""
+    # device config
+    device_id = None
+    state_file = None
     # socket config
     udp_host = None
     udp_port = None
@@ -106,6 +114,31 @@ class Vmse(object):
         self._init_gpio()
         self._init_printer()
         self._init_socket()
+
+    def load_state(self):
+        if not self.state_file:
+            return
+        try:
+            with open(self.state_file, "r") as f:
+                state = json.load(f)
+                print("Loaded state:", state)
+                if "ticket_number" in state:
+                    self.ticket_number = state["ticket_number"]
+        except Exception:
+            logging.exception("Loading state failed")
+
+    def save_state(self):
+        if not self.state_file:
+            return
+        state = {
+            "ticket_number": self.ticket_number,
+        }
+        try:
+            with open(self.state_file, "w") as f:
+                json.dump(state, f)
+                print("Saved state:", state)
+        except Exception:
+            logging.exception("Saving state failed")
 
     def read_config(self):
         config = ConfigParser()
@@ -149,6 +182,9 @@ class Vmse(object):
         # badge config
         self.token_file = config.get("badge", "token_file", fallback=None)
         self.token_none = config.get("badge", "token_none", fallback="")
+        # state
+        self.device_id = config.get("device", "device_id", fallback="vmse2000")
+        self.state_file = config.get("device", "state_file", fallback=None)
         print("Text is:")
         for line in self.printer_text:
             print(f"  {line}")
@@ -251,6 +287,8 @@ class Vmse(object):
         line = line.replace(
             "$TIMESTAMP$", violation.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
         line = line.replace("$TOKEN$", violation.token or self.token_none)
+        line = line.replace("$TICKET_NUMBER$", str(violation.ticket_number))
+        line = line.replace("$DEVICE_ID$", str(self.device_id))
         return line
 
     def print_ticket(self, violation: Violation):
@@ -386,6 +424,8 @@ class Vmse(object):
     def store_evidence(self, violation: Violation):
         if self.evidence_file:
             data = {
+                "device": self.device_id,
+                "ticket-number": violation.ticket_number,
                 "timestamp": violation.timestamp.isoformat(),
                 "profanity": violation.profanity,
                 "token": violation.token,
@@ -461,7 +501,10 @@ class Vmse(object):
                     print("Triggered by button")
                 else:
                     print(f"got word: '{item}'")
-                violation = Violation(item, token=self.get_badge_next_token())
+                violation = Violation(
+                    item,
+                    token=self.get_badge_next_token(),
+                    ticket_number=self.get_next_ticket_number())
                 print("VIOLATION DETECTED!")
                 print(violation)
                 self.do_fine(violation)
@@ -479,47 +522,55 @@ class Vmse(object):
         """Pop the last non-empty line from a file and return it. If the file is empty, return None."""
         if not filename:
             return None
-        with open(filename, "r+") as f:
-            f.seek(0, os.SEEK_END)
-            size = f.tell()
-            if size == 0:
-                return None
-            # skip trailing newlines
-            pos = size - 1
-            f.seek(pos, os.SEEK_SET)
-            c = f.read(1)
-            while c == "\n" or c == "\r":
-                if pos == 0:
+        try:
+            with open(filename, "r+") as f:
+                f.seek(0, os.SEEK_END)
+                size = f.tell()
+                if size == 0:
                     return None
-                pos -= 1
-                f.seek(0, os.SEEK_SET)
-                c = f.read(1)
-            if pos == 0:
-                # no more (none-empty) lines
-                return None
-            line_end = pos + 1
-            # find the start of the last line
-            while pos > 0:
-                pos -= 1
+                # skip trailing newlines
+                pos = size - 1
                 f.seek(pos, os.SEEK_SET)
                 c = f.read(1)
-                if c == "\n" or c == "\r":
-                    pos += 1
-                    break
-            line_start = pos
-            # print("line_start:", line_start, "line_end:", line_end)
-            f.seek(line_start, os.SEEK_SET)
-            line = f.read(line_end - line_start)
-            # print("popped line:", line)
-            # truncate the file
-            f.truncate(line_start)
-            return line.strip()
+                while c == "\n" or c == "\r":
+                    if pos == 0:
+                        return None
+                    pos -= 1
+                    f.seek(0, os.SEEK_SET)
+                    c = f.read(1)
+                if pos == 0:
+                    # no more (none-empty) lines
+                    return None
+                line_end = pos + 1
+                # find the start of the last line
+                while pos > 0:
+                    pos -= 1
+                    f.seek(pos, os.SEEK_SET)
+                    c = f.read(1)
+                    if c == "\n" or c == "\r":
+                        pos += 1
+                        break
+                line_start = pos
+                # print("line_start:", line_start, "line_end:", line_end)
+                f.seek(line_start, os.SEEK_SET)
+                line = f.read(line_end - line_start)
+                # print("popped line:", line)
+                # truncate the file
+                f.truncate(line_start)
+                return line.strip()
+        except Exception:
+            return None
 
     def get_badge_next_token(self) -> str | None:
         if self.token_file:
             return self.filepop(self.token_file)
         return None
 
+    def get_next_ticket_number(self) -> int:
+        self.load_state()
+        self.ticket_number += 1
+        self.save_state()
+        return self.ticket_number
 
 def vmse():
     v = Vmse()
