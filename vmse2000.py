@@ -15,6 +15,26 @@ import gpiod
 from gpiod.line import Direction, Value
 
 
+class ConsolePrinter:
+    META_COLOUR = '\033[33m'
+    TEXT_COLOUR = '\033[93m'
+    RESET = '\033[0m'
+    def set(self, **kwargs):
+        pass
+
+    def image(self, path):
+        print(f"{self.META_COLOUR}[IMAGE: {path}]{self.RESET}")
+        time.sleep(0.1)
+
+    def text(self, txt):
+        print(f"{self.TEXT_COLOUR}{txt}{self.RESET}", end="")
+        time.sleep(0.01 * len(txt))
+
+    def cut(self):
+        print(f"{self.META_COLOUR}[CUT]{self.RESET}")
+        time.sleep(0.1)
+
+
 class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
     CONFIG_PATH = "vmse2000.ini"
@@ -333,7 +353,8 @@ class Vmse(object):
                 )
             assert self.printer.is_usable()
         else:
-            print("no printer")
+            print("no printer, using console printer")
+            self.printer = ConsolePrinter()
 
     def _init_socket(self):
         if self.udp_port:
