@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import datetime
 import threading
 import time
 import random
@@ -33,6 +34,17 @@ class ConsolePrinter:
     def cut(self):
         print(f"{self.META_COLOUR}[CUT]{self.RESET}")
         time.sleep(0.1)
+
+
+class Violation:
+    """A detected violation event."""
+    def __init__(self, profanity: bool|str = True, timestamp=None, fine=None):
+        if profanity is True:
+            self.profanity = "<censored>"
+        else:
+            self.profanity = profanity
+        self.timestamp: datetime.datetime = timestamp or datetime.datetime.now().astimezone()
+        self.fine: float = fine or random.random() / 1000.0
 
 
 class Vmse(object):
@@ -212,10 +224,10 @@ class Vmse(object):
     def printer_thread_foo(self):
         print("P: printer thread started")
         while self.running:
-            entry = self.printer_start_queue.get()
-            if entry:
+            violation = self.printer_start_queue.get()
+            if violation:
                 print("P: start printing")
-                self.print_ticket(entry)
+                self.print_ticket(violation)
                 print("P: done printing")
                 self.printer_finish_queue.put(True)
             else:
@@ -223,19 +235,19 @@ class Vmse(object):
                 break
         print("P: printing thread exiting")
 
-    def print_ticket(self, item=True):
-        xx = "{:f}".format(random.random() / 1000.0)
-        print(f"item is {item} ({type(item)})")
+    def _evaluate_line(self, line: str, violation: Violation) -> str:
+        line = line.replace("$FINE$", "{:f}".format(violation.fine))
+        line = line.replace("$ITEM$", violation.profanity)
+        line = line.replace(
+            "$TIMESTAMP$", violation.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        return line
+
+    def print_ticket(self, violation: Violation):
         if self.printer_flipped:
             self.printer.set(align="center", flip=True)
             self.printer.image("assets/violation-flipped.png")
             for line in reversed(self.printer_text):
-                if "$FINE$" in line:
-                    line = line.replace("$FINE$", xx)
-                if isinstance(item, str):
-                    line = line.replace("$ITEM$", item)
-                if "$TIMESTAMP$" in line:
-                    line = line.replace("$TIMESTAMP$", time.strftime("%Y-%m-%d %H:%M:%S"))
+                line = self._evaluate_line(line, violation)
                 self.printer.text(line + "\n")
             self.printer.image(self.printer_logo_path)
             self.printer.image("assets/morality-flipped.png")
@@ -244,12 +256,7 @@ class Vmse(object):
             self.printer.image("assets/morality.png")
             self.printer.image(self.printer_logo_path)
             for line in self.printer_text:
-                if "$FINE$" in line:
-                    line = line.replace("$FINE$", xx)
-                if isinstance(item, str):
-                    line = line.replace("$ITEM$", item)
-                if "$TIMESTAMP$" in line:
-                    line = line.replace("$TIMESTAMP$", time.strftime("%Y-%m-%d %H:%M:%S"))
+                line = self._evaluate_line(line, violation)
                 self.printer.text(line + "\n")
             self.printer.image("assets/violation.png")
         self.printer.cut()
@@ -365,11 +372,11 @@ class Vmse(object):
         else:
             print("No UDP socket")
 
-    def store_evidence(self, profanity):
+    def store_evidence(self, violation: Violation):
         if self.evidence_file:
             data = {
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                "profanity": profanity,
+                "timestamp": violation.timestamp.isoformat(),
+                "profanity": violation.profanity,
             }
             try:
                 with open(self.evidence_file, "a") as f:
@@ -380,7 +387,7 @@ class Vmse(object):
         else:
             print("no evidence vault configured, cannot store evidence")
 
-    def do_fine(self, item=True):
+    def do_fine(self, violation: Violation):
         # led on:
         self.fining = True
         if self.pin_fine:
@@ -389,13 +396,13 @@ class Vmse(object):
         else:
             print("No fine pin set")
 
-        self.store_evidence(item)
+        self.store_evidence(violation)
 
         # start blocking stuff in threads:
         if self.audio_thread:
             self.audio_start_queue.put(True)
         if self.printer_thread:
-            self.printer_start_queue.put(item)
+            self.printer_start_queue.put(violation)
         # wait for threads to do there stuff:
         if self.audio_thread:
             self.audio_finish_queue.get()
@@ -439,12 +446,12 @@ class Vmse(object):
                     continue
                 if item is True:
                     # this one came from button:
-                    print("Tautologic, my dear Watson!")
-                    self.do_fine()
+                    print("Triggered by button")
                 else:
                     print(f"got word: '{item}'")
-                    print("VIOLATION DETECTED!")
-                    self.do_fine(item)
+                violation = Violation(item)
+                print("VIOLATION DETECTED!")
+                self.do_fine(violation)
             else:
                 print("Wait - no trigger!")
                 time.sleep(10)
