@@ -3,3 +3,4 @@ venv
 vmse2000.ini
 evidence.jsonl
 tokens.txt
+state.json
