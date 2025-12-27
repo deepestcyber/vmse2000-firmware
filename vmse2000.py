@@ -13,6 +13,7 @@ import socket
 import select
 import logging
 import json
+import os
 
 import gpiod
 from gpiod.line import Direction, Value
@@ -42,6 +43,7 @@ class ConsolePrinter:
 @dataclass
 class Violation:
     profanity: bool | str
+    token: str | None
     timestamp: datetime.datetime | None = field(default_factory=lambda: datetime.datetime.now().astimezone())
     fine: float | None = field(default_factory=lambda: random.random() / 1000)
 
@@ -76,8 +78,11 @@ class Vmse(object):
     printer_flipped = False
     printer_vendor_id = None
     printer_device_id = None
-    # evidence
+    # evidence config
     evidence_file = None
+    # badge config
+    token_file = None
+    token_none = ""
     # socket config
     udp_host = None
     udp_port = None
@@ -140,7 +145,9 @@ class Vmse(object):
             print(f"evidence will be stored in '{self.evidence_file}'")
         else:
             print("no evidence vault configured, prosecutions will be tricky...")
-        #
+        # badge config
+        self.token_file = config.get("badge", "token_file", fallback=None)
+        self.token_none = config.get("badge", "token_none", fallback="")
         print("Text is:")
         for line in self.printer_text:
             print(f"  {line}")
@@ -242,6 +249,7 @@ class Vmse(object):
         line = line.replace("$ITEM$", violation.profanity)
         line = line.replace(
             "$TIMESTAMP$", violation.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        line = line.replace("$TOKEN$", violation.token or self.token_none)
         return line
 
     def print_ticket(self, violation: Violation):
@@ -379,6 +387,7 @@ class Vmse(object):
             data = {
                 "timestamp": violation.timestamp.isoformat(),
                 "profanity": violation.profanity,
+                "token": violation.token,
             }
             try:
                 with open(self.evidence_file, "a") as f:
@@ -451,8 +460,9 @@ class Vmse(object):
                     print("Triggered by button")
                 else:
                     print(f"got word: '{item}'")
-                violation = Violation(item)
+                violation = Violation(item, token=self.get_badge_next_token())
                 print("VIOLATION DETECTED!")
+                print(violation)
                 self.do_fine(violation)
             else:
                 print("Wait - no trigger!")
@@ -463,6 +473,51 @@ class Vmse(object):
             self.running = False
             self.stop_threads()
             self.clean_up()
+
+    def filepop(self, filename):
+        """Pop the last non-empty line from a file and return it. If the file is empty, return None."""
+        if not filename:
+            return None
+        with open(filename, "r+") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            if size == 0:
+                return None
+            # skip trailing newlines
+            pos = size - 1
+            f.seek(pos, os.SEEK_SET)
+            c = f.read(1)
+            while c == "\n" or c == "\r":
+                if pos == 0:
+                    return None
+                pos -= 1
+                f.seek(0, os.SEEK_SET)
+                c = f.read(1)
+            if pos == 0:
+                # no more (none-empty) lines
+                return None
+            line_end = pos + 1
+            # find the start of the last line
+            while pos > 0:
+                pos -= 1
+                f.seek(pos, os.SEEK_SET)
+                c = f.read(1)
+                if c == "\n" or c == "\r":
+                    pos += 1
+                    break
+            line_start = pos
+            # print("line_start:", line_start, "line_end:", line_end)
+            f.seek(line_start, os.SEEK_SET)
+            line = f.read(line_end - line_start)
+            # print("popped line:", line)
+            # truncate the file
+            f.truncate(line_start)
+            return line.strip()
+
+    def get_badge_next_token(self) -> str | None:
+        if self.token_file:
+            return self.filepop(self.token_file)
+        return None
 
 
 def vmse():
