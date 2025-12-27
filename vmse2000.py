@@ -43,6 +43,7 @@ class ConsolePrinter:
 @dataclass
 class Violation:
     profanity: bool | str
+    token: str | None
     timestamp: datetime.datetime | None = field(default_factory=lambda: datetime.datetime.now().astimezone())
     fine: float | None = field(default_factory=lambda: random.random() / 1000)
 
