@@ -3,6 +3,8 @@ import datetime
 import threading
 import time
 import random
+from dataclasses import dataclass, field
+
 import alsaaudio
 import wave
 from configparser import ConfigParser
@@ -33,24 +35,20 @@ class ConsolePrinter:
         time.sleep(0.01 * len(txt))
 
     def cut(self):
-        print(f"{self.META_COLOUR}[CUT]{self.RESET}")
+        print(f"{self.META_COLOUR}[--- >8 ---]{self.RESET}")
         time.sleep(0.1)
 
 
+
+@dataclass
 class Violation:
-    """A detected violation event."""
-    def __init__(self, profanity: bool|str = True, timestamp=None, fine=None, token=None):
-        if profanity is True:
+    profanity: bool | str
+    timestamp: datetime.datetime | None = field(default_factory=lambda: datetime.datetime.now().astimezone())
+    fine: float | None = field(default_factory=lambda: random.random() / 1000)
+
+    def __post_init__(self):
+        if self.profanity is True:
             self.profanity = "<censored>"
-        else:
-            self.profanity = profanity
-        self.timestamp: datetime.datetime = timestamp or datetime.datetime.now().astimezone()
-        self.fine: float = fine or random.random() / 1000.0
-        self.token: str | None = token
-
-    def __str__(self):
-        return f"Violation(profanity='{self.profanity}', timestamp={self.timestamp.isoformat()}, fine={self.fine}, token={self.token})"
-
 
 class Vmse(object):
     DEFAULT_CONFIG_PATH = "vmse2000.default.ini"
